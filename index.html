@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quả cầu 3D – Anh yêu em</title>
+<!--
+  HƯỚNG DẪN NHANH
+  1) Lưu file này thành index.html, mở bằng Chrome/Edge/Safari (cần Internet lần đầu để tải Three.js và font).
+  2) Nhạc: đặt file music.mp3 cùng thư mục với index.html, rồi bấm nút 🎵 (trình duyệt không cho tự phát).
+     Không có music.mp3 thì trang vẫn chạy bình thường; có thể bấm "Chọn MP3" để chọn file khác.
+  3) Nội dung (chữ, ảnh, sticker, cài đặt) tự lưu trong trình duyệt; dùng "Xuất / Nhập" để sao lưu thành file .json.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;800&family=Fredoka:wght@500;700&family=Pacifico&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--teal:#6fe3d2;--pink:#ff8fb1;--ink:#e9f3ff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;color:var(--ink);font:500 14px 'Baloo 2','Fredoka',system-ui,sans-serif;background:#050a1a}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#c:active{cursor:grabbing}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 12px;cursor:pointer;transition:.15s}
+button:hover{background:linear-gradient(120deg,rgba(111,227,210,.35),rgba(255,143,177,.35));transform:translateY(-1px)}
+button:active,label.btn:active{transform:scale(.95)}
+label.btn{display:flex;align-items:center;justify-content:center;margin:0;padding:7px 12px;font-size:14px;opacity:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:999px;cursor:pointer;transition:.15s;text-align:center}
+label.btn:hover{background:linear-gradient(120deg,rgba(111,227,210,.35),rgba(255,143,177,.35));transform:translateY(-1px)}
+#ed label.btn{margin-top:8px}
+.fi{position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+#panel{position:fixed;top:12px;right:12px;bottom:12px;width:min(340px,92vw);overflow:auto;padding:14px;border-radius:22px;background:rgba(10,16,40,.74);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 60px rgba(0,0,0,.5);transition:transform .35s}
+.closed #panel{transform:translateX(115%)}
+h1{margin:0 0 8px;font-size:20px;font-weight:800;background:linear-gradient(90deg,var(--teal),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+details{border-top:1px solid rgba(255,255,255,.1);padding:8px 0}
+summary{cursor:pointer;font-weight:800;color:var(--teal);padding:2px 0}
+label{display:grid;gap:3px;font-size:12px;opacity:.95;margin:7px 0}
+.chk{display:flex;align-items:center;gap:6px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;align-items:end}
+.row>*{flex:1}
+input[type=range]{width:100%;accent-color:var(--pink)}
+input[type=color]{width:100%;height:32px;padding:0;border:0;background:none}
+input:not([type]),input[type=text],textarea,select{width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:6px 8px}
+select option{color:#000}
+.hint{opacity:.65;font-size:12px;margin:6px 0}
+#list{list-style:none;margin:6px 0;padding:0;display:grid;gap:5px;max-height:170px;overflow:auto}
+#list li{display:flex;align-items:center;gap:4px;padding:4px 6px 4px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);cursor:pointer}
+#list li.on{border-color:var(--pink);background:rgba(255,143,177,.14)}
+#list span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#list button{padding:2px 8px}
+#tog,#bar button,#exit{position:fixed;width:42px;height:42px;padding:0;border-radius:50%;background:rgba(10,16,40,.6);backdrop-filter:blur(8px);font-size:18px}
+#tog{top:12px;right:12px;z-index:5}
+.closed #tog{right:12px}
+#panel~#tog{display:block}
+body:not(.closed) #tog{right:min(364px,95vw)}
+#bar{position:fixed;top:12px;left:12px;display:flex;gap:8px}
+#bar button{position:static}
+#exit{display:none;width:auto;border-radius:999px;padding:0 16px;bottom:16px;left:50%;transform:translateX(-50%);top:auto;height:38px;font-size:13px}
+.pv #panel,.pv #tog,.pv #bar{display:none}
+.pv #exit{display:block}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:rgba(10,16,40,.92);border:1px solid var(--pink);padding:9px 16px;border-radius:14px;opacity:0;pointer-events:none;transition:.3s;max-width:90vw;z-index:9}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:640px){#panel{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:56vh}.closed #panel{transform:translateY(115%)}body:not(.closed) #tog{right:12px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- Thanh nút nhanh: luôn hiện kể cả khi thu gọn bảng điều khiển -->
+<div id="bar">
+  <button id="auto" title="Tạm dừng / tiếp tục xoay">⏸</button>
+  <button id="rst" title="Đặt lại góc xoay">⟲</button>
+  <button id="intro" title="Phát lại hoạt ảnh rơi">🌠</button>
+  <button id="fs" title="Toàn màn hình">⛶</button>
+  <button id="pv" title="Xem trước (ẩn giao diện)">👁</button>
+  <button id="bpp" title="Phát / dừng nhạc">🎵</button>
+</div>
+<button id="tog" title="Mở / thu gọn bảng điều khiển">☰</button>
+<button id="exit">Thoát xem trước</button>
+
+<aside id="panel">
+  <h1>Quả cầu 3D</h1>
+  <details open><summary>Thêm phần tử</summary>
+    <div class="row"><label class="btn" for="fImg">🖼 Ảnh</label><label class="btn" for="fStk">🏷 Sticker</label><button id="aTxt">🔤 Chữ</button><button id="aHrt">💗 Tim 3D</button></div>
+    <div class="row"><input id="emo" type="text" placeholder="Dán emoji, ví dụ 😍"><button id="aEmo">Thêm emoji</button></div>
+  </details>
+  <details open><summary>Danh sách</summary><ul id="list"></ul></details>
+  <details open><summary>Chỉnh sửa phần tử đã chọn</summary><div id="ed"></div></details>
+  <details id="scene"><summary>Cảnh &amp; chuyển động</summary>
+    <label>Tốc độ xoay<input type="range" data-s="speed" min="0" max="4" step="0.1"></label>
+    <label>Kích thước quả cầu<input type="range" data-s="size" min="0.5" max="2" step="0.05"></label>
+    <label>Mức phóng to (zoom)<input type="range" data-s="zoom" min="0.5" max="3" step="0.05"></label>
+    <label>Mật độ chữ &amp; sticker<input type="range" data-s="density" min="0.3" max="2.5" step="0.1"></label>
+    <label class="chk"><input type="checkbox" data-s="cycle">Chữ tự đổi màu mỗi 2 giây</label>
+    <label>Màu nền<input type="color" data-s="bg"></label>
+    <div class="row"><button id="exp">Xuất .json</button><label class="btn" for="fJson">Nhập .json</label></div>
+  </details>
+  <details open><summary>Nhạc MP3</summary>
+    <p class="hint" id="ms">Chưa chọn nhạc. Chọn file MP3, hoặc đặt music.mp3 cạnh index.html rồi bấm "Dùng music.mp3".</p>
+    <div class="row"><label class="btn" for="fMp3">🎵 Chọn MP3</label><button id="def">Dùng music.mp3</button></div>
+    <div class="row"><button id="pp">▶ Phát</button><button id="rp">↺ Phát lại</button><label class="chk"><input type="checkbox" id="loop" checked>Lặp</label></div>
+    <label>Tiến trình &nbsp;<span id="tm">0:00 / 0:00</span><input type="range" id="pr" min="0" max="1" step="0.1" value="0"></label>
+    <label>Âm lượng<input type="range" id="vol" min="0" max="1" step="0.01" value="0.7"></label>
+  </details>
+</aside>
+
+<div id="toast" role="status"></div>
+<!-- Các ô chọn file (ẩn bằng cách đẩy ra ngoài màn hình, không dùng display:none để iOS/Android vẫn mở được) -->
+<input type="file" id="fImg" class="fi" accept="image/*">
+<input type="file" id="fStk" class="fi" accept="image/png,image/webp">
+<input type="file" id="fRep" class="fi" accept="image/*">
+<input type="file" id="fMp3" class="fi" accept="audio/mpeg,audio/mp3,.mp3,audio/*">
+<input type="file" id="fJson" class="fi" accept=".json,application/json">
+
+<!-- Thư viện Three.js (bản cố định r128, tải từ cdnjs). Muốn chạy offline: tải file này về, dán nội dung vào thẻ <script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(()=>{
+/* ===== THÔNG SỐ DỄ CHỈNH — sửa các số bên dưới để đổi mật độ, tốc độ, hoạt ảnh rơi... ===== */
+const CFG={
+  itemCount:200,     // tổng số chữ/sticker/ảnh trong không gian (máy tính)
+  mobileCount:110,   // tổng số trên điện thoại (màn hình hẹp < 640px)
+  sphereRadius:620,  // bán kính ngoài cùng của không gian nội dung
+  nearRadius:70,     // khoảng cách gần camera nhất (phần tử gần sẽ rất to)
+  density:1,         // hệ số mật độ ban đầu: số lượng thực = itemCount × density
+  rotationSpeed:1,   // tốc độ xoay ban đầu
+  breath:.16,        // mức phần tử tiến lại gần / lùi xa camera
+  colorEvery:2,      // chữ đổi màu sau mỗi ... giây
+  colorFade:.4,      // thời gian chuyển màu mượt (giây)
+  fallWaves:6,       // số đợt rơi ở hoạt ảnh mở đầu
+  fallMin:2,fallMax:5, // thời gian rơi của mỗi phần tử (giây)
+  fallHeight:1500    // độ cao xuất phát phía trên khung hình
+};
+const KEY='qc3d_v2',OLD='qc3d_v1';
+const $=s=>document.querySelector(s);
+const FONTS=['Baloo 2','Fredoka','Pacifico','Dancing Script','sans-serif'];
+// Bảng màu chữ tự đổi: hồng pastel, xanh ngọc, xanh dương nhạt, tím nhạt, trắng (đều sáng, dễ đọc trên nền tối)
+const PAL=['#ffb3d1','#ff8fb1','#ffd1e8','#6fe3d2','#9ff0e4','#8ec9ff','#a8f0ff','#b9a8ff','#d9c2ff','#ffffff'];
+let S={speed:CFG.rotationSpeed,auto:true,cycle:true,size:1,zoom:1,density:CFG.density,bg:'#050a1a'},items=[],sel=null,insts=[];
+
+/* ---------- Tiện ích ---------- */
+const uid=()=>Math.random().toString(36).slice(2,8);
+const rnd=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)}; // số ngẫu nhiên cố định theo n
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const mkC=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const mk=o=>({id:uid(),dist:1,ang:0,w:1,...o}); // w = tần suất xuất hiện
+const T=(t,c,s=30)=>mk({type:'text',text:t,font:'Baloo 2',color:c,bold:true,shadow:true,cycle:true,size:s});
+const defaults=()=>[T('Anh yêu em','#6fe3d2',32),T('Trọn đời','#ff8fb1',36),T('Hạnh phúc','#ffffff',30),T('Mãi bên nhau','#ff8fb1',26),T('Yêu em','#6fe3d2',24),T('Em là tất cả','#8ec9ff',26),T('Mãi yêu','#b9a8ff',24),
+  mk({type:'heart',color:'#ff7aa5',size:22,w:1.4}),mk({type:'heart',color:'#ff9ec0',size:15,w:1.4})];
+let tt;function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),3600)}
+
+/* ---------- Lưu / tải (localStorage; ảnh đã thu nhỏ trước khi lưu) ---------- */
+const rep=(k,v)=>k[0]==='_'?undefined:v; // bỏ các trường tạm bắt đầu bằng "_"
+function save(){try{localStorage.setItem(KEY,JSON.stringify({S,items},rep))}catch(e){toast('Bộ nhớ trình duyệt đầy hoặc bị chặn: nội dung chưa được lưu. Hãy dùng "Xuất .json".')}}
+function load(j){
+  S={...S,...j.S};items=j.items.map(x=>({dist:1,ang:0,w:1,...x}));
+  return Promise.all(items.filter(i=>i.src).map(i=>new Promise(r=>{const m=new Image();m.onload=()=>{i._img=m;r()};m.onerror=r;m.src=i.src}))).then(()=>{items=items.filter(i=>!i.src||i._img)});
+}
+
+/* ---------- Three.js: cảnh, camera, ánh sáng ---------- */
+const cvs=$('#c'),R=new THREE.WebGLRenderer({canvas:cvs,antialias:true,alpha:true});
+R.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(70,1,1,5000),group=new THREE.Group();
+group.rotation.order='YXZ';scene.add(group);
+scene.add(new THREE.AmbientLight(0xffffff,.6));
+const L1=new THREE.DirectionalLight(0xffffff,.9);L1.position.set(1,1.2,1);scene.add(L1);
+const L2=new THREE.DirectionalLight(0x7fe9ff,.5);L2.position.set(-1,-.5,.5);scene.add(L2);
+
+// Sao nền: 1400 điểm sáng trên một vỏ cầu lớn
+const sp=new Float32Array(4200);
+for(let i=0;i<1400;i++){const z=2*Math.random()-1,a=Math.random()*6.283,r=Math.sqrt(1-z*z),d=1300+Math.random()*1700;sp.set([r*Math.cos(a)*d,z*d,r*Math.sin(a)*d],i*3)}
+const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+const dot=mkC(32,32),dx=dot.getContext('2d'),gr=dx.createRadialGradient(16,16,0,16,16,16);
+gr.addColorStop(0,'#fff');gr.addColorStop(1,'rgba(255,255,255,0)');dx.fillStyle=gr;dx.fillRect(0,0,32,32);
+const stars=new THREE.Points(sg,new THREE.PointsMaterial({size:3,sizeAttenuation:false,map:new THREE.CanvasTexture(dot),transparent:true,depthWrite:false,fog:false,opacity:.85}));
+scene.add(stars);
+
+// Hình trái tim 3D (đùn khối + vát cạnh) dùng chung cho mọi trái tim
+const hs=new THREE.Shape();hs.moveTo(0,-.5);
+hs.bezierCurveTo(-.15,-.35,-.55,-.1,-.5,.2);hs.bezierCurveTo(-.47,.5,-.08,.55,0,.25);
+hs.bezierCurveTo(.08,.55,.47,.5,.5,.2);hs.bezierCurveTo(.55,-.1,.15,-.35,0,-.5);
+const HG=new THREE.ExtrudeGeometry(hs,{depth:.25,bevelEnabled:true,bevelThickness:.2,bevelSize:.15,bevelSegments:6,curveSegments:18});
+HG.center();HG.scale(.8,.8,.8);
+
+/* ---------- Vẽ nội dung ra canvas → texture ---------- */
+function render(it){
+  if(it.type==='text'){
+    const f=`${it.bold?800:500} 96px "${it.font}",sans-serif`,lines=(it.text||' ').split('\n'),m=mkC(1,1).getContext('2d');
+    m.font=f;const w=Math.ceil(Math.max(...lines.map(l=>m.measureText(l).width))+80),lh=120;
+    const c=mkC(w,lh*lines.length+60),x=c.getContext('2d');
+    x.font=f;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';
+    if(it.shadow){x.shadowColor='#fff';x.shadowBlur=26}
+    lines.forEach((l,i)=>x.fillText(l,w/2,30+lh*(i+.5)));return c;
+  }
+  if(it.emoji){const c=mkC(200,200),x=c.getContext('2d');x.font='150px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(it.emoji,100,108);return c}
+  const im=it._img,w=im.width,h=im.height,c=mkC(w,h),x=c.getContext('2d');
+  const r=it.type==='image'?(it.round||0)/100*Math.min(w,h):0; // bo góc theo % cạnh ngắn
+  x.beginPath();x.moveTo(r,0);x.arcTo(w,0,w,h,r);x.arcTo(w,h,0,h,r);x.arcTo(0,h,0,0,r);x.arcTo(0,0,w,0,r);x.closePath();x.clip();
+  x.drawImage(im,0,0);return c; // giữ nguyên tỷ lệ gốc, không méo
+}
+function tex(it){if(it._t)return;const c=render(it),t=new THREE.CanvasTexture(c); // chỉ tạo texture khi ảnh/chữ đã sẵn sàng
+  t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;it._t=t;it._ar=c.width/c.height}
+function disposeItem(it){if(it._t){it._t.dispose();it._t=null}if(it._hm){it._hm.dispose();it._hm=null}}
+
+/* ---------- Dựng không gian: N vị trí (slot) rải đều theo hướng Fibonacci, bán kính ngẫu nhiên gần→xa ---------- */
+let t=0,cc=0,autoT=0,introT=0,introOn=false,rx=0,ry=0,vx=0,vy=0,drag=false,last=performance.now();
+const upL=new THREE.Vector3(),ivq=new THREE.Quaternion(),CS=[]; // CS: trạng thái màu theo slot, giữ nguyên khi dựng lại
+const ease=p=>p*p*(3-2*p),clamp01=v=>Math.min(1,Math.max(0,v));
+function plan(N){ // phân N slot cho các phần tử theo tần suất w, xen kẽ loại (chữ, tim, ảnh...)
+  const cnt=items.map(()=>0),out=[];
+  for(let i=0;i<N;i++){let b=0,bv=1e9;items.forEach((it,k)=>{const v=(cnt[k]+.5)/(it.w||1);if(v<bv){bv=v;b=k}});cnt[b]++;out.push(items[b])}
+  return out;
+}
+function build(){
+  const prevN=insts.length;
+  insts.forEach(i=>{group.remove(i.o);if(i.mat)i.mat.dispose()});insts=[];
+  if(!items.length)return;
+  const N=Math.max(1,Math.round((innerWidth<640?CFG.mobileCount:CFG.itemCount)*S.density));
+  ivq.copy(group.quaternion).invert();
+  plan(N).forEach((it,i)=>{
+    let o,mat=null;const txt=it.type==='text';
+    if(it.type==='heart'){
+      it._hm=it._hm||new THREE.MeshPhongMaterial({color:it.color,specular:0xffffff,shininess:110,emissive:new THREE.Color(it.color).multiplyScalar(.18)});
+      o=new THREE.Mesh(HG,it._hm);
+    }else{tex(it);mat=new THREE.SpriteMaterial({map:it._t,transparent:true,depthWrite:false,color:txt?it.color:0xffffff});o=new THREE.Sprite(mat)}
+    const y=1-2*(i+.5)/N,rr=Math.sqrt(1-y*y),th=i*2.39996+it.ang*Math.PI/180,d=new THREE.Vector3(Math.cos(th)*rr,y,Math.sin(th)*rr);
+    let r=(CFG.nearRadius+Math.pow(rnd(i*3+1),.85)*(CFG.sphereRadius-CFG.nearRadius))*it.dist,born=(!introOn&&prevN&&i>=prevN)?cc:-1;
+    if(it._focus){ // phần tử vừa thêm: cho hiện ngay phía trước camera (có hiệu ứng "bật" ra) để dễ thấy
+      d.set((rnd(i)-.5)*.5,(rnd(i+7)-.5)*.3,-1).normalize().applyQuaternion(ivq);r=190;born=cc;it._focus=false;
+    }
+    const c=CS[i]||(CS[i]={cf:new THREE.Color(it.color),ct:new THREE.Color(it.color),cs:-9,cn:cc+rnd(i*17+8)*CFG.colorEvery});
+    o.rotation.y=rnd(i*3+2)*6.28;group.add(o);
+    insts.push({o,it,mat,txt,d,r,c,col:null,born,noFall:born>=0,ph:rnd(i*3+2)*6.28,sf:.8+rnd(i*5+3)*.5,
+      delay:Math.floor(rnd(i*7+4)*CFG.fallWaves)*.55+rnd(i*11+5)*.5,dur:CFG.fallMin+rnd(i*13+6)*(CFG.fallMax-CFG.fallMin)});
+  });
+}
+function refresh(it){const go=()=>{disposeItem(it);build();list();save()};
+  it.type==='text'&&document.fonts?document.fonts.load(`${it.bold?800:500} 40px "${it.font}"`,it.text).then(go,go):go()}
+
+/* ---------- Vòng lặp hoạt ảnh DUY NHẤT (xoay, camera, đổi màu chữ, hoạt ảnh rơi đều chạy trong đây) ---------- */
+function tick(now){
+  requestAnimationFrame(tick);
+  const dt=Math.min(.05,(now-last)/1000);last=now;cc+=dt; // cc: đồng hồ thật, dùng cho đổi màu
+  if(S.auto){t+=dt*S.speed;autoT+=dt*S.speed}
+  if(introOn){introT+=dt;if(introT>CFG.fallWaves*.55+.5+CFG.fallMax+.3)introOn=false}
+  if(!drag){rx+=vx;ry+=vy;vx*=.94;vy*=.94} // quán tính sau khi thả tay
+  group.rotation.set(rx+Math.sin(autoT*.21)*.4+autoT*.02,ry+autoT*.11,Math.sin(autoT*.17)*.25); // xoay nhiều trục
+  group.scale.setScalar(S.size);stars.rotation.set(autoT*.01,autoT*.02,0);
+  cam.position.set(Math.sin(t*.17)*25,Math.cos(t*.13)*15,Math.sin(t*.09)*40); // camera trôi nhẹ
+  upL.set(0,1,0).applyQuaternion(ivq.copy(group.quaternion).invert()); // hướng "lên trời" trong hệ tọa độ của quả cầu
+  for(const i of insts){
+    const o=i.o,it=i.it,k=i.r*(1+CFG.breath*Math.sin(t*.25+i.ph));
+    let x=i.d.x*k+Math.sin(t*.5+i.ph)*10,y=i.d.y*k+Math.cos(t*.4+i.ph*1.3)*10,z=i.d.z*k,rem=0;
+    if(introOn&&!i.noFall){ // hoạt ảnh mở đầu: rơi từ trên cao, lắc nhẹ, hạ cánh mềm
+      rem=1-ease(clamp01((introT-i.delay)/i.dur));
+      if(rem>0){const H=CFG.fallHeight*rem;x+=upL.x*H+Math.sin(introT*1.6+i.ph)*35*rem;y+=upL.y*H;z+=upL.z*H}
+    }
+    o.position.set(x,y,z);
+    const vis=1-ease(clamp01((rem-.8)/.2)),wob=Math.sin(introT*2.1+i.ph)*.4*rem;let pop=1;
+    if(i.born>=0){const p=clamp01((cc-i.born)/.7);if(p>=1)i.born=-1;else{const q=p-1;pop=1+2.70158*q*q*q+1.70158*q*q}}
+    const s=it.size*i.sf*pop;
+    if(i.mat){ // sprite: chữ / ảnh / sticker
+      o.scale.set(s*(it._ar||1),s,1);i.mat.opacity=vis;i.mat.rotation=wob;
+      if(i.txt){ // đổi màu: mỗi dòng có lịch riêng, chuyển mượt trong colorFade giây
+        const c=i.c;
+        if(S.cycle&&it.cycle!==false){
+          i.col=null;
+          if(cc>=c.cn){c.cf.copy(i.mat.color);c.ct.set(PAL[(Math.random()*PAL.length)|0]);c.cs=cc;c.cn=Math.max(c.cn+CFG.colorEvery,cc+.5)}
+          i.mat.color.copy(c.cf).lerp(c.ct,clamp01((cc-c.cs)/CFG.colorFade));
+        }else if(i.col!==it.color){i.col=it.color;i.mat.color.set(it.color);c.cf.set(it.color);c.ct.set(it.color)}
+      }
+    }else{ // trái tim 3D
+      o.scale.setScalar(s*vis);o.rotation.z=wob;
+      if(S.auto){o.rotation.y+=dt*S.speed*(.7+i.ph*.1);o.rotation.x=Math.sin(t*.8+i.ph)*.35}
+    }
+  }
+  R.render(scene,cam);
+}
+
+/* ---------- Kéo chuột / vuốt cảm ứng, lăn chuột để zoom ---------- */
+let px,py;
+cvs.onpointerdown=e=>{drag=true;px=e.clientX;py=e.clientY;vx=vy=0;cvs.setPointerCapture(e.pointerId)};
+cvs.onpointermove=e=>{if(!drag)return;vy=(e.clientX-px)*.0045;vx=(e.clientY-py)*.0045;ry+=vy;rx+=vx;px=e.clientX;py=e.clientY};
+cvs.onpointerup=cvs.onpointercancel=()=>drag=false;
+cvs.onwheel=e=>{e.preventDefault();S.zoom=Math.min(3,Math.max(.5,S.zoom*(e.deltaY>0?.95:1.05)));applyS();save()};
+function rs(){const w=innerWidth,h=innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.fov=w<h?88:70;cam.updateProjectionMatrix()}
+addEventListener('resize',rs);
+
+/* ---------- Cài đặt cảnh ---------- */
+function applyS(){
+  cam.zoom=S.zoom;cam.updateProjectionMatrix();
+  document.body.style.background=`radial-gradient(ellipse at 50% 35%,color-mix(in srgb,${S.bg},#4a6fb5 24%),${S.bg} 75%)`;
+  scene.fog=new THREE.FogExp2(S.bg,.0016); // xa thì mờ dần về màu nền
+  document.querySelectorAll('[data-s]').forEach(i=>{const v=S[i.dataset.s];if(i.type==='checkbox')i.checked=!!v;else i.value=v});
+  $('#auto').textContent=S.auto?'⏸':'▶';
+}
+$('#scene').oninput=e=>{const el=e.target,k=el.dataset.s;if(!k)return;S[k]=el.type==='checkbox'?el.checked:el.type==='range'?+el.value:el.value;applyS();if(k==='density')build();save()};
+$('#auto').onclick=()=>{S.auto=!S.auto;applyS();save()};
+$('#rst').onclick=()=>{rx=ry=vx=vy=autoT=0};
+$('#fs').onclick=()=>{const d=document.documentElement;document.fullscreenElement?document.exitFullscreen():d.requestFullscreen?d.requestFullscreen():toast('Trình duyệt này không hỗ trợ toàn màn hình.')};
+$('#pv').onclick=()=>document.body.classList.add('pv');
+$('#exit').onclick=()=>document.body.classList.remove('pv');
+addEventListener('keydown',e=>{if(e.key==='Escape')document.body.classList.remove('pv')});
+$('#tog').onclick=()=>document.body.classList.toggle('closed');
+
+/* ---------- Chọn file: dùng <label for> + <input type=file> có sẵn trong HTML, gắn sự kiện "change" đúng MỘT lần ---------- */
+const onFile=(id,fn)=>$(id).addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)fn(f);e.target.value=''}); // reset để chọn lại cùng file vẫn kích hoạt
+const EXT={image:['jpg','jpeg','png','webp'],sticker:['png','webp']};
+function readImg(f,kind,cb){
+  const ext=(f.name.split('.').pop()||'').toLowerCase();
+  const okType=kind==='sticker'?/^image\/(png|webp)$/.test(f.type):/^image\/(jpeg|png|webp)$/.test(f.type);
+  if(!okType&&!(!f.type&&EXT[kind].includes(ext)))
+    return toast(kind==='sticker'?'Sticker chỉ hỗ trợ PNG hoặc WebP (nền trong suốt). File bạn chọn: '+(f.type||ext||'không rõ')+'.':'Ảnh chỉ hỗ trợ JPG, JPEG, PNG hoặc WebP. File bạn chọn: '+(f.type||ext||'không rõ')+'.');
+  const u=URL.createObjectURL(f),im=new Image();
+  im.onerror=()=>{URL.revokeObjectURL(u);toast('Không đọc được ảnh "'+f.name+'". File có thể bị hỏng.')};
+  im.onload=()=>{ // ảnh đã tải xong → thu nhỏ (giữ đúng tỷ lệ) → mới tạo đối tượng 3D
+    try{
+      const m=kind==='sticker'?320:512,s=Math.min(1,m/Math.max(im.naturalWidth,im.naturalHeight)),c=mkC(Math.max(1,Math.round(im.naturalWidth*s)),Math.max(1,Math.round(im.naturalHeight*s)));
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      cb(c.toDataURL(kind==='sticker'?'image/png':'image/webp',.82),c);
+    }catch(e){toast('Không xử lý được ảnh: '+e.message)}
+    finally{URL.revokeObjectURL(u)} // giải phóng URL tạm
+  };
+  im.src=u;
+}
+function add(o){const it=mk(o);it._focus=true;items.push(it);sel=it.id;build();list();editor();save();toast('Đã thêm vào không gian 3D (đang hiện phía trước bạn).')}
+onFile('#fImg',f=>readImg(f,'image',(src,c)=>add({type:'image',src,_img:c,size:60,round:14,w:.6})));
+onFile('#fStk',f=>readImg(f,'sticker',(src,c)=>add({type:'sticker',src,_img:c,size:36})));
+onFile('#fRep',f=>{const it=cur();if(it&&it.src)readImg(f,it.type,(src,c)=>{it.src=src;it._img=c;refresh(it);toast('Đã thay ảnh.')})});
+$('#aTxt').onclick=()=>add(T('Nội dung mới','#ffffff'));
+$('#aHrt').onclick=()=>add({type:'heart',color:'#ff7aa5',size:22,w:1.4});
+$('#aEmo').onclick=()=>{const v=$('#emo').value.trim();if(!v)return toast('Hãy nhập hoặc dán một emoji.');add({type:'sticker',emoji:v,size:34});$('#emo').value=''};
+
+/* ---------- Danh sách & bảng chỉnh sửa ---------- */
+const cur=()=>items.find(x=>x.id===sel);
+const lab=it=>it.type==='text'?it.text.replace(/\n/g,' ').slice(0,22):it.type==='image'?'🖼 Ảnh':it.type==='heart'?'💗 Trái tim 3D':(it.emoji||'🏷 Sticker');
+function list(){$('#list').innerHTML=items.map(it=>`<li data-id="${it.id}" class="${it.id===sel?'on':''}"><span>${esc(lab(it))}</span><button data-a="e" title="Chỉnh sửa">✎</button><button data-a="d" title="Xóa">✕</button></li>`).join('')||'<li class="hint">Chưa có phần tử nào. Hãy thêm ở trên.</li>'}
+$('#list').onclick=e=>{
+  const li=e.target.closest('li[data-id]');if(!li)return;const id=li.dataset.id;
+  if(e.target.dataset.a==='d'){const it=items.find(x=>x.id===id);disposeItem(it);items=items.filter(x=>x!==it);if(sel===id)sel=null;build()}else sel=id;
+  list();editor();save();
+};
+const rg=(k,l,a,b,s,v)=>`<label>${l}<input type="range" data-k="${k}" min="${a}" max="${b}" step="${s}" value="${v}"></label>`;
+function editor(){
+  const it=cur(),e=$('#ed');
+  if(!it){e.innerHTML='<p class="hint">Chọn một phần tử trong danh sách để chỉnh sửa.</p>';return}
+  let h='';
+  if(it.type==='text')h+=`<label>Nội dung (Enter để xuống dòng)<textarea data-k="text" rows="2">${esc(it.text)}</textarea></label>
+   <label>Font<select data-k="font">${FONTS.map(f=>`<option ${f===it.font?'selected':''}>${f}</option>`).join('')}</select></label>
+   <div class="row"><label>Màu gốc<input type="color" data-k="color" value="${it.color}"></label><label class="chk"><input type="checkbox" data-k="cycle" ${it.cycle!==false?'checked':''}>Tự đổi màu</label></div>
+   <div class="row"><label class="chk"><input type="checkbox" data-k="bold" ${it.bold?'checked':''}>Đậm</label><label class="chk"><input type="checkbox" data-k="shadow" ${it.shadow?'checked':''}>Đổ bóng</label></div>`;
+  if(it.type==='heart')h+=`<label>Màu<input type="color" data-k="color" value="${it.color}"></label>`;
+  if(it.emoji)h+=`<label>Emoji<input type="text" data-k="emoji" value="${esc(it.emoji)}"></label>`;
+  if(it.type==='image')h+=rg('round','Bo góc',0,50,1,it.round||0);
+  h+=rg('size','Kích thước',6,160,1,it.size)+rg('w','Tần suất xuất hiện',.2,3,.1,it.w||1)+rg('dist','Độ xa / gần',.3,1.6,.05,it.dist)+rg('ang','Vị trí (xoay quanh tâm)',0,360,5,it.ang);
+  if(it.src)h+='<label class="btn" for="fRep">Thay ảnh khác</label>';
+  e.innerHTML=h;
+}
+$('#ed').oninput=e=>{ // chỉ sửa DUY NHẤT phần tử đang chọn
+  const el=e.target,k=el.dataset.k,it=cur();if(!k||!it)return;
+  it[k]=el.type==='checkbox'?el.checked:el.type==='range'?+el.value:el.value;
+  if(k==='color'&&it.type==='text'){it.cycle=false;const c=$('#ed [data-k="cycle"]');if(c)c.checked=false} // chọn màu tay thì tắt tự đổi màu cho dòng này
+  if(k==='color'&&it._hm){it._hm.color.set(it.color);it._hm.emissive.set(it.color).multiplyScalar(.18)}
+  if(k==='size'||k==='color'||k==='cycle')return save(); // vòng lặp tự cập nhật, không cần dựng lại
+  if(k==='w'||k==='dist'||k==='ang'){build();return save()}
+  refresh(it);
+};
+
+/* ---------- Xuất / nhập .json ---------- */
+$('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({S,items},rep)],{type:'application/json'}));a.download='qua-cau-3d.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e3)};
+onFile('#fJson',f=>f.text().then(x=>{const j=JSON.parse(x);if(!Array.isArray(j.items))throw 0;items.forEach(disposeItem);return load(j).then(()=>{sel=null;boot()})}).catch(()=>toast('File .json không hợp lệ.')));
+$('#intro').onclick=()=>{insts.forEach(i=>{i.noFall=false;i.born=-1});introT=0;introOn=true}; // phát lại hoạt ảnh rơi
+
+/* ---------- Nhạc MP3: chỉ phát khi người dùng bấm nút ---------- */
+const au=new Audio(),ms=$('#ms'),pr=$('#pr'),tm=$('#tm');let blob=null,nm='',seek=false,useDef=false;
+au.preload='auto';au.loop=true;au.volume=.7;
+const fmt=s=>isFinite(s)?Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'):'0:00';
+const tmUi=()=>{tm.textContent=fmt(au.currentTime)+' / '+fmt(au.duration)};
+function sync(){const p=!au.paused&&!au.ended;$('#pp').textContent=p?'⏸ Tạm dừng':'▶ Phát';$('#bpp').style.background=p?'rgba(255,143,177,.45)':''}
+function setSrc(url,name,isBlob){ // gán nguồn nhạc mới; giải phóng URL tạm của bài trước
+  if(blob){URL.revokeObjectURL(blob);blob=null}
+  if(isBlob)blob=url;
+  nm=name;au.src=url;au.load();pr.value=0;pr.max=1;ms.textContent='Đang tải '+name+'…';tmUi();sync();
+}
+au.addEventListener('loadedmetadata',()=>{pr.max=au.duration||1;ms.textContent=nm+' — sẵn sàng, bấm Phát.';tmUi()});
+au.addEventListener('timeupdate',()=>{if(!seek)pr.value=au.currentTime;tmUi()});
+au.addEventListener('play',sync);au.addEventListener('pause',sync);
+au.addEventListener('ended',()=>{sync();ms.textContent=nm+' — đã phát xong, bấm Phát lại.'});
+au.addEventListener('error',()=>{
+  const c=au.error&&au.error.code;
+  const m=c===4?(useDef&&!blob?'Chưa có file music.mp3 cạnh index.html. Hãy đặt file vào cùng thư mục hoặc bấm "Chọn MP3".':'Trình duyệt không hỗ trợ định dạng này hoặc file không phải nhạc hợp lệ.'):c===3?'File nhạc bị hỏng hoặc không giải mã được.':c===2?'Lỗi mạng khi tải nhạc.':'Việc tải nhạc đã bị hủy.';
+  ms.textContent=m;toast(m);sync();
+});
+function play(){
+  if(!au.src||(au.error&&!blob)){useDef=true;setSrc('music.mp3','music.mp3',false)} // chưa chọn gì → thử music.mp3 (an toàn nếu không có file)
+  else if(au.error)return toast(ms.textContent);
+  const p=au.play();
+  if(p&&p.catch)p.catch(err=>{if(err.name==='NotAllowedError')toast('Trình duyệt đang chặn phát tiếng. Hãy bấm Phát lại một lần nữa.');else if(err.name!=='AbortError'&&err.name!=='NotSupportedError')toast('Không phát được nhạc: '+err.message)});
+}
+$('#pp').onclick=$('#bpp').onclick=()=>au.src&&!au.paused&&!au.ended?au.pause():play();
+$('#rp').onclick=()=>{if(au.src&&!au.error)au.currentTime=0;play()};
+$('#def').onclick=()=>{useDef=true;setSrc('music.mp3','music.mp3',false)};
+$('#loop').onchange=e=>{au.loop=e.target.checked};
+$('#vol').oninput=e=>{au.volume=+e.target.value};
+pr.addEventListener('input',()=>{if(isFinite(au.duration))au.currentTime=+pr.value});
+pr.addEventListener('pointerdown',()=>seek=true);['pointerup','pointercancel','change'].forEach(ev=>pr.addEventListener(ev,()=>seek=false));
+onFile('#fMp3',f=>{
+  const ext=(f.name.split('.').pop()||'').toLowerCase();
+  if(!/^audio\//.test(f.type)&&ext!=='mp3')return toast('File "'+f.name+'" không phải file nhạc. Hãy chọn file .mp3.');
+  useDef=false;setSrc(URL.createObjectURL(f),f.name,true);toast('Đã chọn "'+f.name+'". Bấm Phát để nghe.'); // không tự phát
+});
+
+/* ---------- Khởi động ---------- */
+function boot(){build();list();editor();applyS();save()}
+(async()=>{
+  let j,old=0;try{j=JSON.parse(localStorage.getItem(KEY));if(!j){j=JSON.parse(localStorage.getItem(OLD));old=1}}catch(e){}
+  if(j&&Array.isArray(j.items)){if(old&&j.S)delete j.S.density;await load(j)} // dữ liệu bản cũ: giữ nội dung, đặt lại mật độ
+  else{items=defaults();S.auto=!matchMedia('(prefers-reduced-motion:reduce)').matches}
+  S.density=Math.min(2.5,Math.max(.3,+S.density||1));
+  if(innerWidth<640)document.body.classList.add('closed');
+  // chờ font (tối đa 1,5 giây) để chữ vẽ đúng font và đủ dấu tiếng Việt trước khi hoạt ảnh rơi bắt đầu
+  const fl=document.fonts?Promise.all(FONTS.slice(0,4).map(f=>document.fonts.load(`700 40px "${f}"`,'Aạếữ'))).catch(()=>{}):Promise.resolve();
+  await Promise.race([fl,new Promise(r=>setTimeout(r,1500))]);
+  rs();boot();introT=0;introOn=true;
+  requestAnimationFrame(tick); // vòng lặp hoạt ảnh chỉ được khởi động đúng một lần
+  fl.then(()=>{items.forEach(disposeItem);build()});
+})();
+
+})();
+</script>
+</body>
+</html>
