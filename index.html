@@ -135,15 +135,18 @@
       transition: transform .35s
     }
 
-    .closed #panel {
-      transform: translateX(115%);
+    /* Hide the panel at the CSS level from the very first paint. */
+    body.closed #panel {
+      display: none !important;
       visibility: hidden;
-      pointer-events: none
+      pointer-events: none;
     }
 
     body:not(.closed) #panel {
+      display: block;
+      transform: translateX(0);
       visibility: visible;
-      pointer-events: auto
+      pointer-events: auto;
     }
 
     h1 {
@@ -361,10 +364,13 @@
         max-height: 56vh
       }
 
-      .closed #panel {
-        transform: translateY(115%);
-        visibility: hidden;
-        pointer-events: none
+      body.closed #panel {
+        display: none !important;
+      }
+
+      body:not(.closed) #panel {
+        display: block;
+        transform: translateY(0);
       }
 
       body:not(.closed) #tog {
@@ -869,73 +875,4 @@
       $('#intro').onclick = () => {insts.forEach(i => {i.noFall = false; i.born = -1}); introT = 0; introOn = true}; // phát lại hoạt ảnh rơi
 
       /* ---------- Nhạc MP3: chỉ phát khi người dùng bấm nút ---------- */
-      const au = new Audio(), ms = $('#ms'), pr = $('#pr'), tm = $('#tm'); let blob = null, nm = '', seek = false, useDef = false;
-      au.preload = 'auto'; au.loop = true; au.volume = .7;
-      const fmt = s => isFinite(s) ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00';
-      const tmUi = () => {tm.textContent = fmt(au.currentTime) + ' / ' + fmt(au.duration)};
-      function sync() {const p = !au.paused && !au.ended; $('#pp').textContent = p ? '⏸ Tạm dừng' : '▶ Phát'; $('#bpp').style.background = p ? 'rgba(255,143,177,.45)' : ''}
-      function setSrc(url, name, isBlob) { // gán nguồn nhạc mới; giải phóng URL tạm của bài trước
-        if (blob) {URL.revokeObjectURL(blob); blob = null}
-        if (isBlob) blob = url;
-        nm = name; au.src = url; au.load(); pr.value = 0; pr.max = 1; ms.textContent = 'Đang tải ' + name + '…'; tmUi(); sync();
-      }
-      au.addEventListener('loadedmetadata', () => {pr.max = au.duration || 1; ms.textContent = nm + ' — sẵn sàng, bấm Phát.'; tmUi()});
-      au.addEventListener('timeupdate', () => {if (!seek) pr.value = au.currentTime; tmUi()});
-      au.addEventListener('play', sync); au.addEventListener('pause', sync);
-      au.addEventListener('ended', () => {sync(); ms.textContent = nm + ' — đã phát xong, bấm Phát lại.'});
-      au.addEventListener('error', () => {
-        const c = au.error && au.error.code;
-        const m = c === 4 ? (useDef && !blob ? 'Chưa có file music.mp3 cạnh index.html. Hãy đặt file vào cùng thư mục hoặc bấm "Chọn MP3".' : 'Trình duyệt không hỗ trợ định dạng này hoặc file không phải nhạc hợp lệ.') : c === 3 ? 'File nhạc bị hỏng hoặc không giải mã được.' : c === 2 ? 'Lỗi mạng khi tải nhạc.' : 'Việc tải nhạc đã bị hủy.';
-        ms.textContent = m; toast(m); sync();
-      });
-      function play() {
-        if (!au.src || (au.error && !blob)) {useDef = true; setSrc('music.mp3', 'music.mp3', false)} // chưa chọn gì → thử music.mp3 (an toàn nếu không có file)
-        else if (au.error) return toast(ms.textContent);
-        const p = au.play();
-        if (p && p.catch) p.catch(err => {if (err.name === 'NotAllowedError') toast('Trình duyệt đang chặn phát tiếng. Hãy bấm Phát lại một lần nữa.'); else if (err.name !== 'AbortError' && err.name !== 'NotSupportedError') toast('Không phát được nhạc: ' + err.message)});
-      }
-      $('#pp').onclick = $('#bpp').onclick = () => au.src && !au.paused && !au.ended ? au.pause() : play();
-      $('#rp').onclick = () => {if (au.src && !au.error) au.currentTime = 0; play()};
-      $('#def').onclick = () => {useDef = true; setSrc('music.mp3', 'music.mp3', false)};
-      $('#loop').onchange = e => {au.loop = e.target.checked};
-      $('#vol').oninput = e => {au.volume = +e.target.value};
-      pr.addEventListener('input', () => {if (isFinite(au.duration)) au.currentTime = +pr.value});
-      pr.addEventListener('pointerdown', () => seek = true);['pointerup', 'pointercancel', 'change'].forEach(ev => pr.addEventListener(ev, () => seek = false));
-      onFile('#fMp3', f => {
-        const ext = (f.name.split('.').pop() || '').toLowerCase();
-        if (!/^audio\//.test(f.type) && ext !== 'mp3') return toast('File "' + f.name + '" không phải file nhạc. Hãy chọn file .mp3.');
-        useDef = false; setSrc(URL.createObjectURL(f), f.name, true); toast('Đã chọn "' + f.name + '". Bấm Phát để nghe.'); // không tự phát
-      });
-
-      /* ---------- Khởi động ---------- */
-      function boot() {S.zoom = zoomT = clamp(+S.zoom || 1, CFG.zoomMin, CFG.zoomMax); build(); list(); editor(); applyS(); save()}
-      (async () => {
-        let j, mig = 0; try {j = JSON.parse(localStorage.getItem(KEY)); if (!j) for (const k of OLD) {const o = JSON.parse(localStorage.getItem(k)); if (o) {j = o; mig = 1; break} } } catch (e) { }
-        if (j && Array.isArray(j.items)) {
-          if (mig) { // dữ liệu bản cũ: giữ nội dung, áp mặc định mới (nền đen, chữ mảnh, tim đỏ, mật độ mới)
-            j.S = j.S || {}; delete j.S.density; delete j.S.size; j.S.bg = '#000000';
-            j.items.forEach(it => {
-              if (it.type === 'text' && !it.weight) {it.weight = 400; if (!FONTS.includes(it.font) || it.font === 'Baloo 2') it.font = 'Quicksand'}
-              if (it.type === 'heart') it.color = {'#ff7aa5': '#ff2d3f', '#ff9ec0': '#ff5a66'}[it.color] || it.color;
-            });
-          }
-          await load(j);
-        } else {items = defaults(); S.auto = !matchMedia('(prefers-reduced-motion:reduce)').matches}
-        S.density = clamp(+S.density || 1, .3, 2);
-        if (innerWidth < 640) document.body.classList.add('closed');
-        // chờ font (tối đa 1,5 giây); nếu offline thì dùng font dự phòng, trang vẫn chạy bình thường
-        const fl = document.fonts ? Promise.all(FONTS.slice(0, 4).map(f => document.fonts.load(`400 40px "${f}"`, 'Aạếữ'))).catch(() => { }) : Promise.resolve();
-        await Promise.race([fl, new Promise(r => setTimeout(r, 1500))]);
-        rs(); boot();
-        // Nạp thư viện sau khi khởi tạo cảnh và giao diện để ảnh không bị ghi đè bởi bước boot.
-        await loadImageManifest(false);
-        introT = 0; introOn = true;
-        requestAnimationFrame(tick); // vòng lặp hoạt ảnh chỉ được khởi động đúng một lần
-        fl.then(() => {items.forEach(disposeItem); build()});
-      })();
-
-    })();
-  </script>
-</body>
-
-</html>
+      const au = new Audio(), ms = $('#ms'), pr = $('#pr'), tm = $('#tm'); let blob = null, nm = '', seek = 
