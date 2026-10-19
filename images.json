@@ -1,4 +1,109 @@
 {
-  "_instructions": "Thêm mỗi ảnh vào mảng images. Tải file ảnh lên thư mục images/ trong repository. Ví dụ: { \"id\": \"photo1\", \"src\": \"images/photo1.jpg\", \"title\": \"Kỷ niệm\", \"size\": 60, \"round\": 14, \"w\": 0.6, \"dist\": 1, \"ang\": 0 }. Đường dẫn phân biệt chữ hoa/chữ thường.",
-  "images": []
+  "images": [
+    {
+      "id": "images/blinh1.jpg",
+      "src": "images/blinh1.jpg",
+      "title": "blinh1"
+    },
+    {
+      "id": "images/blinh2.jpg",
+      "src": "images/blinh2.jpg",
+      "title": "blinh2"
+    },
+    {
+      "id": "images/bngoc1.jpg",
+      "src": "images/bngoc1.jpg",
+      "title": "bngoc1"
+    },
+    {
+      "id": "images/bngoc2.jpg",
+      "src": "images/bngoc2.jpg",
+      "title": "bngoc2"
+    },
+    {
+      "id": "images/dch1.jpg",
+      "src": "images/dch1.jpg",
+      "title": "dch1"
+    },
+    {
+      "id": "images/dch2.jpg",
+      "src": "images/dch2.jpg",
+      "title": "dch2"
+    },
+    {
+      "id": "images/dchau3.jpg",
+      "src": "images/dchau3.jpg",
+      "title": "dchau3"
+    },
+    {
+      "id": "images/diep1.jpg",
+      "src": "images/diep1.jpg",
+      "title": "diep1"
+    },
+    {
+      "id": "images/diep2.jpg",
+      "src": "images/diep2.jpg",
+      "title": "diep2"
+    },
+    {
+      "id": "images/dlinh1.jpg",
+      "src": "images/dlinh1.jpg",
+      "title": "dlinh1"
+    },
+    {
+      "id": "images/dlinh2.jpg",
+      "src": "images/dlinh2.jpg",
+      "title": "dlinh2"
+    },
+    {
+      "id": "images/hang1.jpg",
+      "src": "images/hang1.jpg",
+      "title": "hang1"
+    },
+    {
+      "id": "images/hang2.webp",
+      "src": "images/hang2.webp",
+      "title": "hang2"
+    },
+    {
+      "id": "images/mc1.jpg",
+      "src": "images/mc1.jpg",
+      "title": "mc1"
+    },
+    {
+      "id": "images/nhi1.jpg",
+      "src": "images/nhi1.jpg",
+      "title": "nhi1"
+    },
+    {
+      "id": "images/nhi2.jpg",
+      "src": "images/nhi2.jpg",
+      "title": "nhi2"
+    },
+    {
+      "id": "images/nthư1.jpg",
+      "src": "images/nthư1.jpg",
+      "title": "nthư1"
+    },
+    {
+      "id": "images/nthư2.jpg",
+      "src": "images/nthư2.jpg",
+      "title": "nthư2"
+    },
+    {
+      "id": "images/phanh1.jpg",
+      "src": "images/phanh1.jpg",
+      "title": "phanh1"
+    },
+    {
+      "id": "images/phanh2.jpg",
+      "src": "images/phanh2.jpg",
+      "title": "phanh2"
+    },
+    {
+      "id": "images/tthư1.jpg",
+      "src": "images/tthư1.jpg",
+      "title": "tthư1"
+    }
+  ]
 }
