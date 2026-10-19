@@ -1,0 +1,38 @@
+
+name: Generate image manifest
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "images/**"
+      - "scripts/generate_images.py"
+      - ".github/workflows/generate-images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Generate images.json
+        run: python scripts/generate_images.py
+
+      - name: Commit updated manifest
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update image manifest"
+          file_pattern: images.json
