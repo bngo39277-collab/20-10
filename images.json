@@ -1,0 +1,4 @@
+{
+  "_instructions": "Thêm mỗi ảnh vào mảng images. Tải file ảnh lên thư mục images/ trong repository. Ví dụ: { \"id\": \"photo1\", \"src\": \"images/photo1.jpg\", \"title\": \"Kỷ niệm\", \"size\": 60, \"round\": 14, \"w\": 0.6, \"dist\": 1, \"ang\": 0 }. Đường dẫn phân biệt chữ hoa/chữ thường.",
+  "images": []
+}
