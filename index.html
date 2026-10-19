@@ -136,7 +136,14 @@
     }
 
     .closed #panel {
-      transform: translateX(115%)
+      transform: translateX(115%);
+      visibility: hidden;
+      pointer-events: none
+    }
+
+    body:not(.closed) #panel {
+      visibility: visible;
+      pointer-events: auto
     }
 
     h1 {
@@ -355,7 +362,9 @@
       }
 
       .closed #panel {
-        transform: translateY(115%)
+        transform: translateY(115%);
+        visibility: hidden;
+        pointer-events: none
       }
 
       body:not(.closed) #tog {
