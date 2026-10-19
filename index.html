@@ -912,14 +912,15 @@
           }
           await load(j);
         } else {items = defaults(); S.auto = !matchMedia('(prefers-reduced-motion:reduce)').matches}
-        // Nạp thêm ảnh được khai báo trong images.json; không thay thế nội dung đã lưu của người dùng.
-        await loadImageManifest(false);
         S.density = clamp(+S.density || 1, .3, 2);
         if (innerWidth < 640) document.body.classList.add('closed');
         // chờ font (tối đa 1,5 giây); nếu offline thì dùng font dự phòng, trang vẫn chạy bình thường
         const fl = document.fonts ? Promise.all(FONTS.slice(0, 4).map(f => document.fonts.load(`400 40px "${f}"`, 'Aạếữ'))).catch(() => { }) : Promise.resolve();
         await Promise.race([fl, new Promise(r => setTimeout(r, 1500))]);
-        rs(); boot(); introT = 0; introOn = true;
+        rs(); boot();
+        // Nạp thư viện sau khi khởi tạo cảnh và giao diện để ảnh không bị ghi đè bởi bước boot.
+        await loadImageManifest(false);
+        introT = 0; introOn = true;
         requestAnimationFrame(tick); // vòng lặp hoạt ảnh chỉ được khởi động đúng một lần
         fl.then(() => {items.forEach(disposeItem); build()});
       })();
